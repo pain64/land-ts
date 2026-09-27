@@ -4,72 +4,93 @@ import fs from 'node:fs';
 
 const fileRegex = /\.(ts)$/
 const cssExprRegex = /css`([^`]*)`/gs
-const cssPropertiesEntryRegex = /^\s*[A-Za-z-_0-9]+\s*:/
+const cssPropertiesEntryRegex1 = /^\s*[A-Za-z-_0-9]+\s*:/
 const cssPropertiesEntryRegex2 = /^\s*&/
 
-function landTsPlugin() {
+// TODO: .this-class должен активировать режим встраивания "Any CSS code"
+function LandTsPlugin() {
 
+    const genMap = new Map()
+    let server
     let counter = 0
 
     return {
         name: 'transform-file',
 
+        configureServer(_server) {
+            fs.rmSync(process.cwd() + '/.css', { recursive: true, force: true })
+            server = _server
+        },
+
+        resolveId(id, importer) {
+            console.log('resolve ' + id + 'by ' + importer)
+            // if (id.startsWith('virtual:land-ts-css:')) return id.substring(20);
+        },
+
+        load(id) {
+            console.log(counter + 'load ' + id)
+            // if (id.startsWith('virtual:land-ts-css:')) return '';
+        },
+
         transform(src, id) {
-            if (fileRegex.test(id)) {
-                // FIXME: починить this-class
+
+            console.log(counter + 'transform ' + id)
+            if (!id.endsWith('.ts')) return
+
+            const now = new Date().getTime()
+            const xxx = process.cwd() + '/.css/' + path.relative(
+                process.cwd() + '/src/', path.dirname(id) + '/' +
+                path.basename(id, '.ts') + '-' + now + '.css'
+            )
+            const yyy = path.relative(path.dirname(id), path.dirname(xxx)) + '/' + path.basename(id, '.ts') + '-' + now + '.css'
+
+            console.log(xxx)
+            console.log(yyy)
+
+            const dirName = path.dirname(id);
 
 
-                const xxx = process.cwd() + '/.css/' + path.relative(
-                    process.cwd() + '/src/', path.dirname(id) + '/' +
-                    path.basename(id, '.ts') + '.css'
-                )
-                const yyy = path.relative(path.dirname(id), path.dirname(xxx)) + '/' + path.basename(id, '.ts') + '.css'
+            const cssBlocks = []
 
-                console.log(xxx)
-                console.log(id)
-                console.log(yyy)
+            const newCode = src.replace(cssExprRegex, (_, cssCode) => {
+                const classId = counter++;
+                const className = '.g' + classId;
 
-                const dirName = path.dirname(id);
-
-                const imports = []
-                const cssBlocks = []
-
-                const newCode = (src).replace(cssExprRegex, (_, cssCode) => {
-                    const classId = counter++;
-                    const className = '.g' + classId;
-
-                    const processed =
-                        (
-                            cssPropertiesEntryRegex.test(cssCode) ||
-                            cssPropertiesEntryRegex2.test(cssCode)
-                        )
-                            ? `${className} {\n${cssCode}\n}`
-                            : cssCode.replace('.this-class', className);
+                const processed =
+                    ( // FIXME
+                        cssPropertiesEntryRegex1.test(cssCode) ||
+                        cssPropertiesEntryRegex2.test(cssCode)
+                    )
+                        ? `${className} {\n${cssCode}\n}`
+                        : cssCode.replace('.this-class', className);
 
 
-                    cssBlocks.push(processed)
-                    return `new Css(${classId})`
-                })
+                cssBlocks.push(processed)
+                console.log(cssCode)
+                const n = cssCode.split('\n').length
+                console.log('n = ', n)
+                // TODO: keep original lines
+                return '\n'.repeat(n - 1) + `new Css(${classId})`
+            })
 
-                if (cssBlocks.length != 0)
-                    imports.push(yyy)
+            const prevCssFile = genMap.get(id)
+            if (typeof prevCssFile != 'undefined')
+                fs.unlinkSync(prevCssFile)
 
-                fs.mkdirSync(path.dirname(xxx), { recursive: true })
-                fs.writeFileSync(
-                    xxx, cssBlocks.join('\n')
-                )
+            fs.mkdirSync(path.dirname(xxx), { recursive: true })
+            fs.writeFileSync(xxx, cssBlocks.join('\n'))
+            genMap.set(id, xxx)
 
-                let libImport = path.relative(dirName, process.cwd() + '/src/land.ts')
-                if (!libImport.startsWith('..')) libImport = './' + libImport
+            let libImport = path.relative(dirName, process.cwd() + '/src/land.ts')
+            if (!libImport.startsWith('..')) libImport = './' + libImport
 
-                const withImports =
-                    (cssBlocks.length == 0 ? '' : `import { Css } from "${libImport}";\n`) +
-                    imports.map(i => `import "./${i}";`).join('\n') + '\n'
-                    + newCode
+            const withImports = (
+                cssBlocks.length == 0 ? '' :
+                    `import { Css } from "${libImport}";import "${yyy}";`
+            ) + newCode
 
-                return {
-                    code: withImports, map: null
-                }
+            return {
+                code: withImports, map: null
             }
         },
     }
@@ -77,5 +98,5 @@ function landTsPlugin() {
 
 export default defineConfig({
     build: { sourcemap: true },
-    plugins: [landTsPlugin()]
+    plugins: [LandTsPlugin()]
 })

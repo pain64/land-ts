@@ -1,3 +1,4 @@
+// TODO: declaration only - no runtime ???
 export function css(str: any, ...args: any): Css {
     args[0] // unused
     str // unused
@@ -32,9 +33,9 @@ export interface AsyncClassComponent<T extends HTMLElement> {
 export type FnComponent<T extends HTMLElement> = () => T
 export type AsyncFnComponent<T extends HTMLElement> = () => Promise<T>
 
-export type Component<T extends HTMLElement> =
-    T | FnComponent<T> | AsyncFnComponent<T> |
-    ClassComponent<T> | AsyncClassComponent<T>
+export type Component<H extends HTMLElement> =
+    H | FnComponent<H> | AsyncFnComponent<H> |
+    ClassComponent<H> | AsyncClassComponent<H>
 
 export function l<T extends keyof HTMLElementTagNameMap, V extends void | Promise<void>>(
     comp: T, init: (_: HTMLElementTagNameMap[T]) => V
@@ -77,9 +78,12 @@ export function l(): any {
 
         } else {
             const mount = (res: HTMLElement | Promise<HTMLElement>) => {
-                if (res instanceof Promise)
-                    res.then(v => dest.appendChild(v))
-                else
+                if (res instanceof Promise) {
+                    // FIXME: deduplicate this logic with line 72
+                    const anchor = document.createElement('div')
+                    dest.appendChild(anchor)
+                    res.then(element => dest.replaceChild(element, anchor))
+                } else
                     dest.appendChild(res)
             }
 
@@ -165,6 +169,7 @@ export function lz(): any {
     }
 }
 
+// TODO: move sync to Zone???
 export function sync(
     zones: Array<Zone | null>, changes: any
 ) {
