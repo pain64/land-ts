@@ -61,10 +61,9 @@ const root = l('div', _ => {
 ```
 ## Components
 ## Rerendering
+Land.ts is just a little wizard for DOM operations in typical SPA cases. There is no constraints to direct DOM manipulation but it offers some simple ways to synchronize component state with DOM tree.
 ### . . Simple zone-based rerender
 ### . . Advanced zone-based rerender
-### . . Direct DOM manipulations
-Land.ts is just a little wizard for DOM operations in typical SPA cases. There is no constraints to direct DOM manipulation. 
 ## CSS embedding
 Land.ts does not restricts usage of pure CSS but allows to embed styles into components. No magic hanneps - just Vite plugin job.
 ### . . Embed as new CSS class
