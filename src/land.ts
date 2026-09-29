@@ -168,12 +168,10 @@ export function lz(): any {
         return z;
     }
 }
-
-// TODO: move sync to Zone???
 export function sync(
-    zones: Array<Zone | null>, changes: any
+    zones: Array<Zone | null>, changeReason?: any
 ) {
-    changes // unused
+    changeReason // unused
     for (let z of zones)
         if (z !== null) z.remount()
 }
