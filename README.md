@@ -117,7 +117,7 @@ l('div', _ => {
 
     l(_, 'button', _ => {
       _.innerText = 'click to increment'
-      _.onclick = () => sync([z], count++) // triggers rerender
+      _.onclick = () => sync([z], counter++) // triggers rerender
     })
   })
 })
