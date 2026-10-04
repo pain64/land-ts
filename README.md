@@ -112,7 +112,7 @@ The `sync` function used to __synchronise__ local state with DOM tree via trigge
 ```typescript
 l('div', _ => {
   let counter = 0
-  lz('div', (_, z) => { // will be rerendered fully
+  lz(_, 'div', (_, z) => { // will be rerendered fully
     l(_, 'span', _ => { _.innerText = 'Current count: ' + count })
 
     l(_, 'button', _ => {
