@@ -124,7 +124,7 @@ l('div', _ => {
 
 ```
 ### . . Advanced zone-based rerender
-More advanced usage is split rerender surface into multiples zones and rerender them separately.
+You may split rerender surface into multiples zones and rerender them separately.
 ```typescript
 l('div', _ => {
   let z1 = lz(_, 'p', _ => { _.innterText = 'zone 1' })

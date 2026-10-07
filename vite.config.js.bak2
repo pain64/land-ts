@@ -1,0 +1,97 @@
+import { defineConfig } from 'vite'
+import path from 'node:path';
+import fs from 'node:fs';
+
+const fileRegex = /\.(ts)$/
+const cssExprRegex = /css`([^`]*)`/gs
+const cssPropertiesEntryRegex = /^\s*[A-Za-z-_0-9]+\s*:/
+const cssPropertiesEntryRegex2 = /^\s*&/
+
+function LandTsPlugin() {
+
+    const genMap = new Map()
+    let server
+    let counter = 0
+
+    return {
+        name: 'transform-file',
+
+        configureServer(_server) {
+            server = _server
+        },
+
+        resolveId(id, importer) {
+            console.log('resolve ' + id + 'by ' + importer)
+            // if (id.startsWith('virtual:land-ts-css:')) return id.substring(20);
+        },
+
+        load(id) {
+            console.log(counter + 'load ' + id)
+            // if (id.startsWith('virtual:land-ts-css:')) return '';
+        },
+
+        transform(src, id) {
+
+            console.log(counter + 'transform ' + id)
+            if (!id.endsWith('.ts')) return
+
+            const now = new Date().getTime()
+            const xxx = process.cwd() + '/.css/' + path.relative(
+                process.cwd() + '/src/', path.dirname(id) + '/' +
+                path.basename(id, '.ts') + '-' + now + '.css'
+            )
+            const yyy = path.relative(path.dirname(id), path.dirname(xxx)) + '/' + path.basename(id, '.ts') + '-' + now + '.css'
+
+            console.log(xxx)
+            console.log(yyy)
+
+            const dirName = path.dirname(id);
+
+            // .land.css
+
+            const cssBlocks = []
+
+            const newCode = src.replace(cssExprRegex, (_, cssCode) => {
+                const classId = counter++;
+                const className = '.g' + classId;
+
+                const processed =
+                    (
+                        cssPropertiesEntryRegex.test(cssCode) ||
+                        cssPropertiesEntryRegex2.test(cssCode)
+                    )
+                        ? `${className} {\n${cssCode}\n}`
+                        : cssCode.replace('.this-class', className);
+
+
+                cssBlocks.push(processed)
+                return `new Css(${classId})`
+            })
+
+            const prevCssFile = genMap.get(id)
+            if (typeof prevCssFile != 'undefined')
+                fs.unlinkSync(prevCssFile)
+
+            fs.mkdirSync(path.dirname(xxx), { recursive: true })
+            fs.writeFileSync(xxx, cssBlocks.join('\n'))
+            genMap.set(id, xxx)
+
+            let libImport = path.relative(dirName, process.cwd() + '/src/land.ts')
+            if (!libImport.startsWith('..')) libImport = './' + libImport
+
+            const withImports = (
+                cssBlocks.length == 0 ? '' :
+                    `import { Css } from "${libImport}";import "${yyy}";`
+            ) + newCode
+
+            return {
+                code: withImports, map: null
+            }
+        },
+    }
+}
+
+export default defineConfig({
+    build: { sourcemap: true },
+    plugins: [LandTsPlugin()]
+})
