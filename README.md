@@ -1,4 +1,5 @@
 # Land.ts
+LandTS is a little powerfull library to build frontend with Typescript.
 ## Get started
 You can download this repo as starter project for Land.ts & Vite.
 ```typescript
@@ -72,7 +73,7 @@ const root = l('div', _ => {
     l(_, 'div', _ => {
       if (task.isImportant)
         css`color: red;`.applyTo(_)
-      _.innterText = task.description
+      _.innerText = task.description
     })
 })
 ```
@@ -127,8 +128,8 @@ l('div', _ => {
 You may split rerender surface into multiples zones and rerender them separately.
 ```typescript
 l('div', _ => {
-  let z1 = lz(_, 'p', _ => { _.innterText = 'zone 1' })
-  let z2 = lz(_, 'p', _ => { _.innterText = 'zone 2' })
+  let z1 = lz(_, 'p', _ => { _.innerText = 'zone 1' })
+  let z2 = lz(_, 'p', _ => { _.innerText = 'zone 2' })
 
   l(_, 'button', _ => {
     _.onclick = () => {
