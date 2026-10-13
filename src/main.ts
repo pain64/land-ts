@@ -19,8 +19,8 @@ class FetchExample implements AsyncClassComponent<HTMLDivElement> {
     render(): Promise<HTMLDivElement> {
         return l('div', async _ => {
             css`
-        color:rgb(104, 31, 31);
-      `.applyTo(_)
+                color:rgb(104, 31, 31);
+             `.applyTo(_)
 
             _.innerText = 'The random number of your day is: ' +
                 await (await fetch(
@@ -38,13 +38,13 @@ class GameExample implements ClassComponent<HTMLDivElement> {
         ]
 
         function isWinnerContested() {
-            const winPattern = [
+            const winPatterns = [
                 [0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6],
                 [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6],
             ]
             const board = history[currentMove]
 
-            for (let [a, b, c] of winPattern)
+            for (let [a, b, c] of winPatterns)
                 if (board[a] != '' && board[a] === board[b] && board[a] === board[c])
                     return true
 
@@ -67,16 +67,18 @@ class GameExample implements ClassComponent<HTMLDivElement> {
                         grid-template-columns: repeat(3, 32px);
                     `.applyTo(_)
 
+                    const board = history[currentMove]
+
                     for (let i = 0; i < 9; i++) {
-                        const board = history[currentMove]
                         l(_, 'button', _ => {
                             _.innerText = board[i]
                             _.onclick = () => {
                                 if (board[i] != '' || isWinnerContested()) return
 
-                                const newBoard = [...board];
-                                newBoard[i] = currentPlayer();
-                                sync([z], [history.push(newBoard), currentMove++])
+                                sync([z], (() => {
+                                    history.push(board.toSpliced(i, 1, currentPlayer()))
+                                    currentMove++
+                                })())
                             }
                         })
                     }
